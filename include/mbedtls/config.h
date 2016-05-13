@@ -756,8 +756,9 @@
  *
  * Enable functions that use the filesystem.
  */
-/*#define MBEDTLS_FS_IO*/
-
+#ifndef MBEDTLS_FS_IO_DISABLE
+#define MBEDTLS_FS_IO
+#endif
 /**
  * \def MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
  *

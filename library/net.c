@@ -61,16 +61,21 @@ static int wsa_init_done = 0;
 #else /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
 
 #include <sys/types.h>
+#ifdef MBEDTLS_LWIP
 #include <lwip/sockets.h>
-/*#include <netinet/in.h>*/
 #include <lwip/netif.h>
 #include <lwip/netif/etharp.h>
-/*#include <arpa/inet.h>*/
+#include <lwip/netdb.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#endif
 #include <sys/time.h>
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <lwip/netdb.h>
 #include <errno.h>
 
 #endif /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
@@ -185,10 +190,11 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = proto == MBEDTLS_NET_PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM;
     hints.ai_protocol = proto == MBEDTLS_NET_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP;
-#ifdef AI_PASSIVE
+#ifndef MBEDTLS_LWIP
     if( bind_ip == NULL )
         hints.ai_flags = AI_PASSIVE;
 #endif
+
     if( getaddrinfo( bind_ip, port, &hints, &addr_list ) != 0 )
         return( MBEDTLS_ERR_NET_UNKNOWN_HOST );
 
@@ -299,8 +305,8 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     socklen_t n = (socklen_t) sizeof( client_addr );
     socklen_t type_len = (socklen_t) sizeof( type );
 #else
-    unsigned n = (int) sizeof( client_addr );
-    unsigned type_len = (int) sizeof( type );
+    int n = (int) sizeof( client_addr );
+    int type_len = (int) sizeof( type );
 #endif
 
     /* Is this a TCP or UDP socket? */
@@ -387,13 +393,22 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
         }
         else
         {
+#ifdef MBEDTLS_LWIP
             struct sockaddr_in *addr6 = (struct sockaddr_in *) &client_addr;
             *ip_len = sizeof( addr6->sin_addr.s_addr );
+#else
+            struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *) &client_addr;
+            *ip_len = sizeof( addr6->sin6_addr.s6_addr );
+#endif
 
             if( buf_size < *ip_len )
                 return( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
 
+#ifdef MBEDTLS_LWIP
             memcpy( client_ip, &addr6->sin_addr.s_addr, *ip_len);
+#else
+            memcpy( client_ip, &addr6->sin6_addr.s6_addr, *ip_len);
+#endif
         }
     }
 

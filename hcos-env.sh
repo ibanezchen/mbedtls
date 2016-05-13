@@ -19,6 +19,8 @@ export CFLAGS="${COPTS} -fno-builtin -fno-common -ffunction-sections -fdata-sect
 ${SOC_INC} \
 -I${PREFIX}/include \
 -D__socklen_t_defined \
+-DMBEDTLS_LWIP \
+-DMBEDTLS_FS_IO_DISABLE \
 -Dselect=lwip_select \
 "
 echo CFLAGS=$CFLAGS

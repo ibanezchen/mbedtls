@@ -135,6 +135,21 @@ static int has_getrandom = -1;
 
 #include <stdio.h>
 
+#if MBEDTLS_LWIP
+#include <hcos/tmr.h>
+#define HAVE_GETRANDOM
+int (*mbedtls_getrandom_wrapper)( void *, size_t , unsigned int );
+int getrandom_wrapper( void *buf, size_t buflen, unsigned int flags )
+{
+	int i;
+	if(mbedtls_getrandom_wrapper)
+		return mbedtls_getrandom_wrapper(buf, buflen, flags);
+	for( i = 0 ; i < buflen ; i ++)
+		((char*)buf)[i] = (char)(tmr_ticks&0xff);
+	return buflen;
+}
+#endif
+
 int mbedtls_platform_entropy_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
@@ -143,10 +158,12 @@ int mbedtls_platform_entropy_poll( void *data,
     ((void) data);
 
 #if defined(HAVE_GETRANDOM)
+#if ! defined(MBEDTLS_LWIP)
     if( has_getrandom == -1 )
         has_getrandom = ( check_version_3_17_plus() == 0 );
 
     if( has_getrandom )
+#endif
     {
         int ret;
 

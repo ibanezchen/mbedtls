@@ -21,7 +21,7 @@ ${SOC_INC} \
 -D__socklen_t_defined \
 -DMBEDTLS_LWIP \
 -DMBEDTLS_FS_IO_DISABLE \
--Dselect=lwip_select \
+-DMBEDTLS_PLATFORM_MEMORY \
 "
 echo CFLAGS=$CFLAGS
 

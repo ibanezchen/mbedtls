@@ -50,6 +50,10 @@ int main( void )
 #include "mbedtls/error.h"
 #include "mbedtls/ssl.h"
 
+#ifdef MBEDTLS_LWIP
+#include <lwip/sockets.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -77,6 +77,7 @@ static int wsa_init_done = 0;
 #include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <ctype.h>
 
 #endif /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
 
@@ -134,6 +135,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
 {
     int ret;
     struct addrinfo hints, *addr_list, *cur;
+    struct sockaddr_in addr;
 
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
@@ -143,6 +145,14 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = proto == MBEDTLS_NET_PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM;
     hints.ai_protocol = proto == MBEDTLS_NET_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP;
+
+    if( isdigit(host[0]) ) {
+        addr.sin_family = AF_INET;
+	addr.sin_port = htons(atoi(port));
+        inet_pton(AF_INET, host, &addr.sin_addr);
+        ctx->fd = (int) socket(AF_INET, SOCK_STREAM, 0);
+        return connect( ctx->fd,(const struct sockaddr *)&addr,sizeof(addr)  );
+    }
 
     if( getaddrinfo( host, port, &hints, &addr_list ) != 0 )
         return( MBEDTLS_ERR_NET_UNKNOWN_HOST );
